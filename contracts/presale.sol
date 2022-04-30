@@ -1,135 +1,158 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./DaffyToken.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "hardhat/console.sol";
 
-/**
- * @title TokenPresale
- * TokenPresale allows investors to make
- * token purchases and assigns them tokens based
- * on a token per ETH rate. Funds collected are forwarded to a wallet
- * as they arrive.
- */
+contract Presale is Ownable {
+    mapping (address => bool) public whitelist;
+    mapping (address => uint) public balances;
+    
+    bool whitelistAll;
+    bool public closed;
 
-contract Presale is Pausable, Ownable {
-    /**
-     * crowdsale constructor
-     * @param _wallet who receives invested ether
-     * @param _minInvestment is the minimum amount of ether that can be sent to the contract
-     * @param _cap above which the crowdsale is closed
-     * @param _rate is the amount of tokens given for 1 ether
-     */
+    uint256 _closingTime;
+    uint256 maxSupply;
+    
+    uint256 public totalDeposits;
+    ERC20 public token;
+    uint256 whitelistedUsers;
 
-    constructor(
-        address _tokenAddress,
-        address payable _wallet,
-        uint256 _minInvestment,
-        uint256 _cap,
-        uint256 _rate
-    ) {
-        require(_wallet != address(0));
-        require(_minInvestment >= 0);
-        require(_cap > 0);
-        TokenAddress = _tokenAddress;
-
-        wallet = _wallet;
-        rate = _rate;
-        minInvestment = _minInvestment * (10**18); //minimum investment in wei  (=1 ether)
-        cap = _cap * 10**8;
-    }
-
-    // The token being sold
-    address TokenAddress;
-
-    // address where funds are collected
-    address public wallet;
-
-    // amount of raised money in wei
-    uint256 public weiRaised;
-
-    // cap above which the crowdsale is ended
-    uint256 public cap;
-
-    uint256 public minInvestment;
-
-    uint256 public rate;
-
-    bool public isFinalized;
-
-    string public contactInformation;
-
-    /**
-     * event for token purchase logging
-     * @param purchaser who paid for the tokens
-     * @param beneficiary who got the tokens
-     * @param value weis paid for purchase
-     * @param amount amount of tokens purchased
-     */
-    event TokenPurchase(
-        address indexed purchaser,
-        address indexed beneficiary,
-        uint256 value,
-        uint256 amount
+    event Deposit(
+        address indexed _from,
+        uint _value
+    );
+    event Payout(
+        address indexed _to,
+        uint _value
+    );
+    event Refund(
+        address indexed _to,
+        uint _value
     );
 
-    /**
-     * event for signaling finished crowdsale
-     */
-    event Finalized();
-
-    // fallback function to buy tokens
-    receive() external payable {
-        buyTokens(msg.sender);
+    constructor(address[] memory users,uint256 closingTime, uint256 _maxSupply) payable {
+        setMaxSupply(_maxSupply);
+        setCloseState(false);
+        whitelistUser(msg.sender);
+        whitelistUsers(users);
+        deposit(owner(), msg.value);
+        setClosingTime(closingTime);
     }
 
-    /**
-     * Low level token purchase function
-     * @param beneficiary will receive the tokens.
-     */
-    function buyTokens(address beneficiary) public payable whenNotPaused {
-        require(beneficiary != address(0));
-        require(msg.value < minInvestment, "The enter amount is below minimum");
-        require((weiRaised + msg.value) * rate <= cap, "Greater than cap");
-
-        uint256 weiAmount = msg.value;
-        console.log(weiAmount);
-        console.log(rate);
-        // update weiRaised
-        weiRaised = weiRaised + weiAmount;
-        // compute amount of tokens created
-        uint256 tokens = weiAmount * rate;
-        console.log(tokens);
-
-        IERC20(TokenAddress).transfer(beneficiary, tokens);
-        emit TokenPurchase(msg.sender, beneficiary, weiAmount, tokens);
-        forwardFunds();
+    function setClosingTime(uint256 closingTime) internal {
+        _closingTime = closingTime;
     }
 
-    // send ether to the fund collection wallet
-    function forwardFunds() internal {
-        payable(wallet).transfer(msg.value);
+    function setMaxSupply(uint256 _maxSupply) internal {
+        console.log(_maxSupply);
+        maxSupply = _maxSupply;
     }
 
-    //allow owner to finalize the presale once the presale is ended
-    function finalize() public onlyOwner {
-        require(!isFinalized);
-        require(hasEnded());
-
-        emit Finalized();
-
-        isFinalized = true;
+    function included(address buyer) public view returns (bool ok) {
+        return whitelistAll || whitelist[buyer];
+    }
+    
+    function refund(address buyer) internal {
+        uint amount = balances[buyer];
+        // if the buyer is not included in the pool
+        // then the buyer's contribution is not included
+        // in totalDeposits, so we only need to update
+        // totalDeposits if the buyer is refunding their funds
+        // while the pool is open
+        if (!closed) {
+            totalDeposits -= amount;
+        }
+        balances[buyer] = 0;
+        payable(buyer).transfer(amount);
+        emit Refund(buyer, amount);
     }
 
-    function setContactInformation(string memory info) public onlyOwner {
-        contactInformation = info;
+    function checkClosed() internal {
+        if(block.timestamp > _closingTime){
+            close(msg.sender);
+        }
     }
 
-    //return true if crowdsale event has ended
-    function hasEnded() public view returns (bool) {
-        bool capReached = (weiRaised * rate >= cap);
-        return capReached;
+    function deposit(address buyer, uint amount) public {
+        require(!closed);
+        console.log(totalDeposits);
+        console.log(maxSupply);
+        require(totalDeposits < maxSupply,"Sold out");
+        checkClosed();
+        require(included(msg.sender), "Address is not whitelisted for purchase");
+        balances[buyer] += amount;
+        totalDeposits += amount;
+        maxSupply -= amount;
+        emit Deposit(buyer, amount);
+    }
+
+    function payoutTokens(address buyer) internal {
+        uint tokenBalance = token.balanceOf(address(this));
+        require(tokenBalance > 0);
+        uint buyerDeposit = balances[buyer];
+        uint buyerShare = (buyerDeposit * tokenBalance) / totalDeposits;
+        totalDeposits -= buyerDeposit;
+        balances[buyer] = 0;
+        require(token.transfer(buyer, buyerShare));
+        emit Payout(buyer, buyerShare);
+    }
+
+    function close(address presaleAddress) internal {
+        require(msg.sender == owner());
+        require(!closed);
+        setCloseState(true);                    
+        payable(presaleAddress).transfer(totalDeposits);
+    }
+
+    function setCloseState(bool state) internal {
+        closed = state;
+    }
+
+    function closeAllowAll(address presaleAddress) public {
+        require(msg.sender == owner());
+        require(!closed);
+        setCloseState(true);
+        whitelistAll = true;
+        payable(presaleAddress).transfer(totalDeposits);
+    }
+
+    function setToken(address tokenAddress) public {
+        require(msg.sender == owner());
+        token = ERC20(tokenAddress);
+    }
+
+    function kill() public {
+        require(msg.sender == owner());
+        selfdestruct(payable(owner()));
+    }
+
+    function payout() external payable {
+        // to deposits send > 1, to refund or payout send 0 eth
+        if (msg.value <= 1) {
+            // refund deposits if the sale isn't closed
+            // or the buyer was not included in the sale's whitelist
+            if (!closed || !included(msg.sender)) {
+                refund(msg.sender);
+                return;
+            }
+            payoutTokens(msg.sender);
+        } else {
+            deposit(msg.sender, msg.value);
+        }
+    }
+
+    function whitelistUsers(address[] memory _users) internal onlyOwner {
+        for (uint256 i = 0; i < _users.length; i++)
+        {
+            address user = _users[i];
+            whitelistUser(user);
+        }
+    }
+
+    function whitelistUser(address _user) internal {
+        whitelist[_user] = true;
+        whitelistedUsers = whitelistedUsers + 1;
     }
 }

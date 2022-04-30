@@ -1,10 +1,10 @@
 {
   "_format": "hh-sol-cache-2",
   "files": {
-    "E:\\Genius\\Dev\\web\\blockchain-projects\\ICO\\contracts\\DaffyToken.sol": {
-      "lastModificationDate": 1650134244246,
-      "contentHash": "60cc091f323267d30780f28c2a058c47",
-      "sourceName": "contracts/DaffyToken.sol",
+    "E:\\Genius\\Dev\\web\\blockchain-projects\\ICO\\contracts\\Perruna.sol": {
+      "lastModificationDate": 1650567194294,
+      "contentHash": "0001e51447d145773011084fa379b5e1",
+      "sourceName": "contracts/Perruna.sol",
       "solcConfig": {
         "version": "0.8.11",
         "settings": {
@@ -35,42 +35,7 @@
         "^0.8.0"
       ],
       "artifacts": [
-        "DaffyToken"
-      ]
-    },
-    "E:\\Genius\\Dev\\web\\blockchain-projects\\ICO\\node_modules\\hardhat\\console.sol": {
-      "lastModificationDate": 1646607549456,
-      "contentHash": "cc4777addd464ea56fa35b1c45df0591",
-      "sourceName": "hardhat/console.sol",
-      "solcConfig": {
-        "version": "0.8.11",
-        "settings": {
-          "optimizer": {
-            "enabled": false,
-            "runs": 200
-          },
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [],
-      "versionPragmas": [
-        ">=0.4.22 <0.9.0"
-      ],
-      "artifacts": [
-        "console"
+        "Perruna"
       ]
     },
     "E:\\Genius\\Dev\\web\\blockchain-projects\\ICO\\node_modules\\@openzeppelin\\contracts\\token\\ERC20\\ERC20.sol": {
@@ -219,10 +184,10 @@
         "Context"
       ]
     },
-    "E:\\Genius\\Dev\\web\\blockchain-projects\\ICO\\contracts\\presale.sol": {
-      "lastModificationDate": 1650141127306,
-      "contentHash": "6aad63895c294222c2ad60ac092dd243",
-      "sourceName": "contracts/presale.sol",
+    "E:\\Genius\\Dev\\web\\blockchain-projects\\ICO\\contracts\\Presale.sol": {
+      "lastModificationDate": 1650906125938,
+      "contentHash": "52bd267d52fa5df4e6db7b4baa4dfe0f",
+      "sourceName": "contracts/Presale.sol",
       "solcConfig": {
         "version": "0.8.11",
         "settings": {
@@ -247,8 +212,7 @@
         }
       },
       "imports": [
-        "./DaffyToken.sol",
-        "@openzeppelin/contracts/security/Pausable.sol",
+        "@openzeppelin/contracts/token/ERC20/ERC20.sol",
         "@openzeppelin/contracts/access/Ownable.sol",
         "hardhat/console.sol"
       ],
@@ -257,43 +221,6 @@
       ],
       "artifacts": [
         "Presale"
-      ]
-    },
-    "E:\\Genius\\Dev\\web\\blockchain-projects\\ICO\\node_modules\\@openzeppelin\\contracts\\security\\Pausable.sol": {
-      "lastModificationDate": 1644712876881,
-      "contentHash": "9c2dccab8e3a43a18c41e358763fe4d8",
-      "sourceName": "@openzeppelin/contracts/security/Pausable.sol",
-      "solcConfig": {
-        "version": "0.8.11",
-        "settings": {
-          "optimizer": {
-            "enabled": false,
-            "runs": 200
-          },
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "../utils/Context.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.0"
-      ],
-      "artifacts": [
-        "Pausable"
       ]
     },
     "E:\\Genius\\Dev\\web\\blockchain-projects\\ICO\\node_modules\\@openzeppelin\\contracts\\access\\Ownable.sol": {
@@ -331,6 +258,41 @@
       ],
       "artifacts": [
         "Ownable"
+      ]
+    },
+    "E:\\Genius\\Dev\\web\\blockchain-projects\\ICO\\node_modules\\hardhat\\console.sol": {
+      "lastModificationDate": 1646607549456,
+      "contentHash": "cc4777addd464ea56fa35b1c45df0591",
+      "sourceName": "hardhat/console.sol",
+      "solcConfig": {
+        "version": "0.8.11",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.4.22 <0.9.0"
+      ],
+      "artifacts": [
+        "console"
       ]
     }
   }
